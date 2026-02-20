@@ -2,6 +2,8 @@ import requests
 from .conftest import BASE_URL
 import time
 
+
+
 ### HAPPY PATH TESTS ###
 
 def test_health_check():
@@ -24,11 +26,7 @@ def test_register_user_creates_new_user():
     """check that the registration of a new user works"""
 
     # Arrange
-    timestamp= int(time.time()*1000)
-    username = f"testuser{timestamp}"
-
-    user_data = {"username": username,
-                 "password": "secret123!"}
+    user_data = generate_user_data()
 
     # Act: register user
     response = requests.post(f"{BASE_URL}/api/auth/register", json=user_data)
@@ -36,7 +34,7 @@ def test_register_user_creates_new_user():
     # Assert
     assert response.status_code == 201
     assert response.json()['message'] == 'User created successfully'
-    assert response.json()['user']['username'] == username
+    assert response.json()['user']['username'] == user_data['username']
 
 
 
@@ -44,12 +42,7 @@ def test_login_user_returns_auth_token():
     """check that we can login a registered user and get an auth token"""
 
     # Arrange
-    timestamp = int(time.time() * 1000)
-    username = f"testuser{timestamp}"
-
-    # register user
-    user_data = {"username": username,
-                 "password": "secret123!"}
+    user_data = generate_user_data()
 
     requests.post(f"{BASE_URL}/api/auth/register", json=user_data)
 
@@ -58,7 +51,7 @@ def test_login_user_returns_auth_token():
 
     # Assert
     assert response.status_code == 200
-    assert response.json()["user"]["username"] == username
+    assert response.json()["user"]["username"] == user_data["username"]
     assert response.json()["access_token"] is not None
     assert response.json()["access_token"] is not ""
 
@@ -150,3 +143,17 @@ def test_rsvp_to_booked_out_event_fails():
     # Assert
 
     pass
+
+
+
+### HELPER FUNCTIONS ###
+
+def generate_user_data():
+    # create unique username using timestamp
+    timestamp = int(time.time() * 1000)
+    username = f"testuser{timestamp}"
+
+    # register user
+    user_data = {"username": username,
+                 "password": "secret123!"}
+    return user_data
