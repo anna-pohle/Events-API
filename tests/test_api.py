@@ -94,16 +94,18 @@ def test_rsvp_to_public_event_requires_no_auth(register_user_and_get_auth_token)
 
 ### ERROR/ EDGE CASE TESTS ###
 
-def test_register_duplicate_user_fails(register_user_and_get_auth_token):
+def test_register_duplicate_user_fails():
     """check that registering a duplicate user returns 400"""
 
     # Arrange
+    user_data = generate_user_data()
 
-    # Act
-
+    # Act: register same user twice
+    response = requests.post(f"{BASE_URL}/api/auth/register", json=user_data)
+    response = requests.post(f"{BASE_URL}/api/auth/register", json=user_data)
     # Assert
-
-    pass
+    assert response.status_code == 400
+    assert response.json()['error'] == 'Username already exists'
 
 
 
