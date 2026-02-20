@@ -1,6 +1,6 @@
 from models import User
 
-def test_user_password_hashing():
+def test_user_password_hashing_works_correctly():
     """test that password and checking works correctly"""
 
     # Arrange: Create a user

@@ -10,7 +10,7 @@ def base_url():
     return BASE_URL
 
 @pytest.fixture
-def auth_token():
+def register_user_and_get_auth_token():
     """fixture that registers a user and returns an auth token"""
 
     # create unique username using timestamp
