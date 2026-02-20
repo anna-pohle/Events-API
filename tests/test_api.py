@@ -1,3 +1,5 @@
+import datetime
+
 import requests
 from .conftest import BASE_URL
 
@@ -18,7 +20,15 @@ def test_create_event(auth_token):
     """check that we can create an event"""
 
     # Arrange event data
-    event_data = """insert event data here as json string"""
+    event_data = {
+      "title": "Test Meetup",
+      "description": "blah",
+      "date": "2026-11-15T18:00:00",
+      "location": "at yo momma's",
+      "capacity": 3,
+      "is_public": True,
+      "requires_admin": False
+    }
     headers = {"Authorization": f"Bearer {auth_token}"}
 
     # Act
