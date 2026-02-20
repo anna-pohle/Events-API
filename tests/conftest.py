@@ -26,3 +26,4 @@ def register_user_and_get_auth_token():
     # login
     response = requests.post(f"{BASE_URL}/api/auth/login", json=user_data)
     return response.json()["access_token"]
+

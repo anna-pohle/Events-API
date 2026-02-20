@@ -1,12 +1,11 @@
-import datetime
-
 import requests
 from .conftest import BASE_URL
+import time
 
 ### HAPPY PATH TESTS ###
 
 def test_health_check():
-    """check that health endpoint returns healthy
+    """check that health endpoint returns 'healthy'
     Make sure app is running to test this"""
 
     #Arrange
@@ -14,18 +13,55 @@ def test_health_check():
     # Act
     response = requests.get(f"{BASE_URL}/api/health")
     data = response.json()
+
     # Assert
     assert response.status_code == 200
     assert data['status'] == 'healthy'
 
+
+
 def test_register_user_creates_new_user():
-    """check that we can register a user"""
-    pass
+    """check that the registration of a new user works"""
+
+    # Arrange
+    timestamp= int(time.time()*1000)
+    username = f"testuser{timestamp}"
+
+    user_data = {"username": username,
+                 "password": "secret123!"}
+
+    # Act: register user
+    response = requests.post(f"{BASE_URL}/api/auth/register", json=user_data)
+
+    # Assert
+    assert response.status_code == 201
+    assert response.json()['message'] == 'User created successfully'
+    assert response.json()['user']['username'] == username
+
 
 
 def test_login_user_returns_auth_token():
-    """check that we can login a user and get an auth token"""
-    pass
+    """check that we can login a registered user and get an auth token"""
+
+    # Arrange
+    timestamp = int(time.time() * 1000)
+    username = f"testuser{timestamp}"
+
+    # register user
+    user_data = {"username": username,
+                 "password": "secret123!"}
+
+    requests.post(f"{BASE_URL}/api/auth/register", json=user_data)
+
+    # Act: login
+    response = requests.post(f"{BASE_URL}/api/auth/login", json=user_data)
+
+    # Assert
+    assert response.status_code == 200
+    assert response.json()["user"]["username"] == username
+    assert response.json()["access_token"] is not None
+    assert response.json()["access_token"] is not ""
+
 
 def test_create_public_event_requires_auth_and_suceeds_with_token(register_user_and_get_auth_token):
     """check that we can create a public event using an auth token"""
@@ -49,24 +85,68 @@ def test_create_public_event_requires_auth_and_suceeds_with_token(register_user_
     # Assert
     assert response.status_code == 201
 
+
+
 def test_rsvp_to_public_event_requires_no_auth(register_user_and_get_auth_token):
     """check that we can rsvp to a public event without auth"""
+
+    # Arrange
+
+    # Act
+
+    # Assert
     pass
+
 
 
 ### ERROR/ EDGE CASE TESTS ###
 
-def test_register_duplicate_user_fails():
+def test_register_duplicate_user_fails(register_user_and_get_auth_token):
     """check that registering a duplicate user returns 400"""
+
+    # Arrange
+
+    # Act
+
+    # Assert
+
     pass
+
+
 
 def test_rsvp_to_private_event_fails_without_auth():
     """check that rsvp to private event without auth returns 401 error"""
+
+    # Arrange
+
+    # Act
+
+    # Assert
+
     pass
+
+
 
 def test_rsvp_to_private_event_fails_with_invalid_token():
     """check that rsvp to private event with invalid token returns 401 error"""
+
+    # Arrange
+
+    # Act
+
+    # Assert
+
     pass
+
+
 
 def test_rsvp_to_booked_out_event_fails():
     """check that rsvp to booked out event returns 400 error"""
+
+    # Arrange
+
+    # Act
+
+    # Assert
+
+    pass
