@@ -165,16 +165,35 @@ def test_rsvp_to_private_event_fails_without_auth_passes_with_auth(register_user
     assert response_auth.status_code == 201
 
 
-def test_rsvp_to_private_event_fails_with_invalid_token():
-    """check that rsvp to private event with invalid token returns 401 error"""
+def test_rsvp_to_admin_event_fails_with_non_admin_auth(register_user_and_get_auth_token):
+    """check that rsvp to private event with non-admin token returns 403 error"""
 
-    # Arrange
+    # Arrange: register user and get token for event creation
+    auth_token = register_user_and_get_auth_token
 
-    # Act
+    event_data = {
+        "title": "Admin Test Meetup",
+        "description": "rsvp only possible with admin-auth",
+        "date": "2030-11-15T18:00:00",
+        "location": "at yo momma's",
+        "capacity": 5,
+        "is_public": False,
+        "requires_admin": True
+    }
+    headers = {"Authorization": f"Bearer {auth_token}"}
 
-    # Assert
+    # Arrange: create admin event
+    event_creation_response = requests.post(f"{BASE_URL}/api/events", json=event_data,
+                                            headers=headers)
 
-    pass
+    event_id = event_creation_response.json()["id"]
+
+    # Act: RSVP to event with non-admin auth
+
+    response_auth = requests.post(f"{BASE_URL}/api/rsvps/event/{event_id}", json={"attending": True}, headers=headers)
+
+    assert response_auth.status_code == 403
+    assert response_auth.json()['error'] == 'Admin access required for this event'
 
 
 
