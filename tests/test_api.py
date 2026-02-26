@@ -26,7 +26,7 @@ def test_register_user_creates_new_user():
     """check that the registration of a new user works"""
 
     # Arrange
-    user_data = generate_user_data()
+    user_data = _generate_user_data()
 
     # Act: register user
     response = requests.post(f"{BASE_URL}/api/auth/register", json=user_data)
@@ -42,7 +42,7 @@ def test_login_user_returns_auth_token():
     """check that we can login a registered user and get an auth token"""
 
     # Arrange
-    user_data = generate_user_data()
+    user_data = _generate_user_data()
 
     requests.post(f"{BASE_URL}/api/auth/register", json=user_data)
 
@@ -83,12 +83,31 @@ def test_create_public_event_requires_auth_and_suceeds_with_token(register_user_
 def test_rsvp_to_public_event_requires_no_auth(register_user_and_get_auth_token):
     """check that we can rsvp to a public event without auth"""
 
-    # Arrange
+    # Arrange: register user
+    auth_token = register_user_and_get_auth_token
 
-    # Act
+    event_data = {
+        "title": "Public Test Meetup",
+        "description": "anybody should be able to join this",
+        "date": "2030-11-15T18:00:00",
+        "location": "at yo momma's",
+        "capacity": 10,
+        "is_public": True,
+        "requires_admin": False
+    }
+    headers = {"Authorization": f"Bearer {auth_token}"}
 
-    # Assert
-    pass
+    # Arrange: create public event
+    event_creation_response = requests.post(f"{BASE_URL}/api/events", json=event_data,
+                             headers=headers)
+
+    event_id = event_creation_response.json()["id"]
+
+    # Act: RSVP to event without auth
+    response = requests.post(f"{BASE_URL}/api/rsvps/event/{event_id}", json={"attending": True})
+
+    # Assert RSVP was successful
+    assert response.status_code == 201
 
 
 
@@ -98,7 +117,7 @@ def test_register_duplicate_user_fails():
     """check that registering a duplicate user returns 400"""
 
     # Arrange
-    user_data = generate_user_data()
+    user_data = _generate_user_data()
 
     # Act: register same user twice
     response = requests.post(f"{BASE_URL}/api/auth/register", json=user_data)
@@ -150,12 +169,12 @@ def test_rsvp_to_booked_out_event_fails():
 
 ### HELPER FUNCTIONS ###
 
-def generate_user_data():
+def _generate_user_data():
     # create unique username using timestamp
     timestamp = int(time.time() * 1000)
     username = f"testuser{timestamp}"
 
-    # register user
+    # generate user_data as dict
     user_data = {"username": username,
                  "password": "secret123!"}
     return user_data
