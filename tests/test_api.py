@@ -128,17 +128,41 @@ def test_register_duplicate_user_fails():
 
 
 
-def test_rsvp_to_private_event_fails_without_auth():
-    """check that rsvp to private event without auth returns 401 error"""
+def test_rsvp_to_private_event_fails_without_auth_passes_with_auth(register_user_and_get_auth_token):
+    """check that rsvp to private event without auth returns 401 error, bit rsvp to same event with auth passes"""
 
-    # Arrange
+    # Arrange: register user
+    auth_token = register_user_and_get_auth_token
 
-    # Act
+    event_data = {
+        "title": "Private Test Meetup",
+        "description": "rsvp only possible with auth",
+        "date": "2030-11-15T18:00:00",
+        "location": "at yo momma's",
+        "capacity": 5,
+        "is_public": False,
+        "requires_admin": False
+    }
+    headers = {"Authorization": f"Bearer {auth_token}"}
 
-    # Assert
+    # Arrange: create public event
+    event_creation_response = requests.post(f"{BASE_URL}/api/events", json=event_data,
+                                            headers=headers)
 
-    pass
+    event_id = event_creation_response.json()["id"]
 
+    # Act: RSVP to event without auth
+    response_no_auth = requests.post(f"{BASE_URL}/api/rsvps/event/{event_id}", json={"attending": True})
+
+    # Assert second RSVP fails due to missing auth
+    assert response_no_auth.status_code == 401
+    assert response_no_auth.json()['error'] == 'Authentication required for this event'
+
+
+    # Act: RSVP to the same event again, this time with auth
+    response_auth = requests.post(f"{BASE_URL}/api/rsvps/event/{event_id}", json={"attending": True}, headers=headers)
+
+    assert response_auth.status_code == 201
 
 
 def test_rsvp_to_private_event_fails_with_invalid_token():
@@ -154,16 +178,41 @@ def test_rsvp_to_private_event_fails_with_invalid_token():
 
 
 
-def test_rsvp_to_booked_out_event_fails():
-    """check that rsvp to booked out event returns 400 error"""
+def test_rsvp_to_booked_out_public_event_fails(register_user_and_get_auth_token):
+    """check that rsvp to booked out public event returns 400 error"""
 
-    # Arrange
+    # Arrange: register user
+    auth_token = register_user_and_get_auth_token
 
-    # Act
+    event_data = {
+        "title": "Public Test Meetup; capacity is 1",
+        "description": "has a capacity of 1",
+        "date": "2030-11-15T18:00:00",
+        "location": "at yo momma's",
+        "capacity": 1,
+        "is_public": True,
+        "requires_admin": False
+    }
+    headers = {"Authorization": f"Bearer {auth_token}"}
 
-    # Assert
+    # Arrange: create public event
+    event_creation_response = requests.post(f"{BASE_URL}/api/events", json=event_data,
+                                            headers=headers)
 
-    pass
+    event_id = event_creation_response.json()["id"]
+
+    # Act: RSVP twice to event without auth
+    response_first_rsvp = requests.post(f"{BASE_URL}/api/rsvps/event/{event_id}", json={"attending": True})
+
+    #assert first rsvp was successful
+    assert response_first_rsvp.status_code == 201
+
+    #Act: RSVP to the same event again
+    response = requests.post(f"{BASE_URL}/api/rsvps/event/{event_id}", json={"attending": True})
+
+    # Assert second RSVP fails due to capacity being reached
+    assert response.status_code == 400
+    assert response.json()['error'] == 'Event is at full capacity'
 
 
 
