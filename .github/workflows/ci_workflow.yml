@@ -12,4 +12,8 @@ jobs:
     name: test
     runs-on: ubuntu-latest
     steps:
-      - uses: "actions/checkout@v4"
+      - uses: "actions/checkout@v4" # github repo in virtual machine herunterladen
+      - run: "docker build -t  events-api ." # in dieser vm aus dem repo ein docker image m.d. namen "events-api" bauen
+      - run: "docker run -d -p 5000:5000 events-api"  # docker container aus diesem image starten
+      - run: "sleep 5"        #warten
+      - run: "curl localhost:5000/api/health" # curl request an API in container
