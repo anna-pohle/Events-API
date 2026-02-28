@@ -1,6 +1,6 @@
 import requests
-from .conftest import BASE_URL
-import time
+from .conftest import BASE_URL, generate_user_data
+from .api_clients.auth_client import AuthClient
 
 
 
@@ -26,10 +26,11 @@ def test_register_user_creates_new_user():
     """check that the registration of a new user works"""
 
     # Arrange
-    user_data = _generate_user_data()
+    auth = AuthClient(BASE_URL)
+    user_data = generate_user_data()
 
     # Act: register user
-    response = requests.post(f"{BASE_URL}/api/auth/register", json=user_data)
+    response = auth.register(user_data)
 
     # Assert
     assert response.status_code == 201
@@ -42,7 +43,7 @@ def test_login_user_returns_auth_token():
     """check that we can login a registered user and get an auth token"""
 
     # Arrange
-    user_data = _generate_user_data()
+    user_data = generate_user_data()
 
     requests.post(f"{BASE_URL}/api/auth/register", json=user_data)
 
@@ -117,7 +118,7 @@ def test_register_duplicate_user_fails():
     """check that registering a duplicate user returns 400"""
 
     # Arrange
-    user_data = _generate_user_data()
+    user_data = generate_user_data()
 
     # Act: register same user twice
     response = requests.post(f"{BASE_URL}/api/auth/register", json=user_data)
@@ -233,16 +234,3 @@ def test_rsvp_to_booked_out_public_event_fails(register_user_and_get_auth_token)
     assert response.status_code == 400
     assert response.json()['error'] == 'Event is at full capacity'
 
-
-
-### HELPER FUNCTIONS ###
-
-def _generate_user_data():
-    # create unique username using timestamp
-    timestamp = int(time.time() * 1000)
-    username = f"testuser{timestamp}"
-
-    # generate user_data as dict
-    user_data = {"username": username,
-                 "password": "secret123!"}
-    return user_data
