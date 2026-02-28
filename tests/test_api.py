@@ -45,10 +45,10 @@ def test_login_user_returns_auth_token():
     # Arrange
     user_data = generate_user_data()
 
-    requests.post(f"{BASE_URL}/api/auth/register", json=user_data)
+    AuthClient(BASE_URL).register(user_data)
 
     # Act: login
-    response = requests.post(f"{BASE_URL}/api/auth/login", json=user_data)
+    response = AuthClient(BASE_URL).login(user_data)
 
     # Assert
     assert response.status_code == 200
@@ -121,8 +121,9 @@ def test_register_duplicate_user_fails():
     user_data = generate_user_data()
 
     # Act: register same user twice
-    response = requests.post(f"{BASE_URL}/api/auth/register", json=user_data)
-    response = requests.post(f"{BASE_URL}/api/auth/register", json=user_data)
+    AuthClient(BASE_URL).register(user_data)
+    response = AuthClient(BASE_URL).register(user_data)
+
     # Assert
     assert response.status_code == 400
     assert response.json()['error'] == 'Username already exists'
