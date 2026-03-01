@@ -1,4 +1,7 @@
 import requests
+
+from routes.rsvps import rsvps_bp
+from .api_clients.rsvps_client import RSVPSClient
 from .conftest import BASE_URL, generate_user_data
 from .api_clients.auth_client import AuthClient
 from .api_clients.events_client import EventsClient
@@ -74,10 +77,10 @@ def test_create_public_event_requires_auth_and_suceeds_with_token(register_user_
     headers = {"Authorization": f"Bearer {register_user_and_get_auth_token}"}
 
     # Act
-    response = EventsClient(BASE_URL).create_event(event_data, headers)
+    event_creation_response = EventsClient(BASE_URL).create_event(event_data, headers)
 
     # Assert
-    assert response.status_code == 201
+    assert event_creation_response.status_code == 201
 
 
 
@@ -103,10 +106,11 @@ def test_rsvp_to_public_event_requires_no_auth(register_user_and_get_auth_token)
     event_id = event_creation_response.json()["id"]
 
     # Act: RSVP to event without auth
-    response = requests.post(f"{BASE_URL}/api/rsvps/event/{event_id}", json={"attending": True})
+    reply = {"attending": True}
+    rsvps_response = RSVPSClient(BASE_URL).rsvp_to_event(event_id, reply)
 
     # Assert RSVP was successful
-    assert response.status_code == 201
+    assert rsvps_response.status_code == 201
 
 
 
@@ -120,11 +124,11 @@ def test_register_duplicate_user_fails():
 
     # Act: register same user twice
     AuthClient(BASE_URL).register(user_data)
-    response = AuthClient(BASE_URL).register(user_data)
+    duplicate_registration_response = AuthClient(BASE_URL).register(user_data)
 
     # Assert
-    assert response.status_code == 400
-    assert response.json()['error'] == 'Username already exists'
+    assert duplicate_registration_response.status_code == 400
+    assert duplicate_registration_response.json()['error'] == 'Username already exists'
 
 
 
@@ -150,7 +154,8 @@ def test_rsvp_to_private_event_fails_without_auth_passes_with_auth(register_user
     event_id = event_creation_response.json()["id"]
 
     # Act: RSVP to event without auth
-    response_no_auth = requests.post(f"{BASE_URL}/api/rsvps/event/{event_id}", json={"attending": True})
+    reply = {"attending": True}
+    response_no_auth = RSVPSClient(BASE_URL).rsvp_to_event(event_id, reply)
 
     # Assert second RSVP fails due to missing auth
     assert response_no_auth.status_code == 401
@@ -158,7 +163,8 @@ def test_rsvp_to_private_event_fails_without_auth_passes_with_auth(register_user
 
 
     # Act: RSVP to the same event again, this time with auth
-    response_auth = requests.post(f"{BASE_URL}/api/rsvps/event/{event_id}", json={"attending": True}, headers=headers)
+    reply = {"attending": True}
+    response_auth = RSVPSClient(BASE_URL).rsvp_to_event(event_id, reply, headers)
 
     assert response_auth.status_code == 201
 
@@ -185,8 +191,8 @@ def test_rsvp_to_admin_event_fails_with_non_admin_auth(register_user_and_get_aut
     event_id = event_creation_response.json()["id"]
 
     # Act: RSVP to event with non-admin auth
-
-    response_auth = requests.post(f"{BASE_URL}/api/rsvps/event/{event_id}", json={"attending": True}, headers=headers)
+    reply = {"attending": True}
+    response_auth = RSVPSClient(BASE_URL).rsvp_to_event(event_id, reply, headers)
 
     assert response_auth.status_code == 403
     assert response_auth.json()['error'] == 'Admin access required for this event'
@@ -215,15 +221,16 @@ def test_rsvp_to_booked_out_public_event_fails(register_user_and_get_auth_token)
     event_id = event_creation_response.json()["id"]
 
     # Act: RSVP twice to event without auth
-    response_first_rsvp = requests.post(f"{BASE_URL}/api/rsvps/event/{event_id}", json={"attending": True})
+    reply = {"attending": True}
+    response_first_rsvp = RSVPSClient(BASE_URL).rsvp_to_event(event_id, reply)
 
     #assert first rsvp was successful
     assert response_first_rsvp.status_code == 201
 
     #Act: RSVP to the same event again
-    response = requests.post(f"{BASE_URL}/api/rsvps/event/{event_id}", json={"attending": True})
+    response_full_capacity = RSVPSClient(BASE_URL).rsvp_to_event(event_id, reply)
 
     # Assert second RSVP fails due to capacity being reached
-    assert response.status_code == 400
-    assert response.json()['error'] == 'Event is at full capacity'
+    assert response_full_capacity.status_code == 400
+    assert response_full_capacity.json()['error'] == 'Event is at full capacity'
 
