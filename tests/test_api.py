@@ -1,6 +1,3 @@
-import requests
-
-from .api_clients.health_client import HealthClient
 from .api_clients.rsvps_client import RSVPSClient
 from .conftest import BASE_URL, generate_user_data
 from .api_clients.auth_client import AuthClient
