@@ -1,10 +1,11 @@
 import requests
 
-from routes.rsvps import rsvps_bp
+from .api_clients.health_client import HealthClient
 from .api_clients.rsvps_client import RSVPSClient
 from .conftest import BASE_URL, generate_user_data
 from .api_clients.auth_client import AuthClient
 from .api_clients.events_client import EventsClient
+from .api_clients.health_client import HealthClient
 
 
 
@@ -14,10 +15,9 @@ def test_health_check():
     """check that health endpoint returns 'healthy'
     Make sure app is running to test this"""
 
-    #Arrange
 
     # Act
-    response = requests.get(f"{BASE_URL}/api/health")
+    response = HealthClient(BASE_URL).check_api_status()
     data = response.json()
 
     # Assert
