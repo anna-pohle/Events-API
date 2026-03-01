@@ -43,6 +43,44 @@ python app.py
 
 The API will be available at `http://localhost:5000`
 
+# Docker
+
+The application can be run in a Docker container.
+
+1. Build the Docker image:
+```bash
+docker build -t events-api .
+```
+
+2. Run the container:
+```bash
+docker run -d -p 5000:5000 --name events_api_container events-api
+```
+
+3. Verify the API is running:
+```bash
+curl localhost:5000/api/health
+```
+
+4. Stop and remove the container:
+```bash
+docker stop events_api_container
+docker rm events_api_container
+```
+
+## CI/CD
+
+This project uses **GitHub Actions** for continuous integration. The pipeline is triggered on every push or pull request to `main` and performs the following steps:
+
+1. Checks out the repository
+2. Builds the Docker image
+3. Starts the container and runs a health check
+4. Sets up Python and installs dependencies
+5. Runs the full test suite against the containerized API
+6. Cleans up the container
+
+The workflow configuration can be found in `.github/workflows/ci_workflow.yml`.
+
 ## Swagger UI Documentation
 
 The API includes interactive Swagger UI documentation. After starting the server:
@@ -116,6 +154,35 @@ The API includes interactive Swagger UI documentation. After starting the server
 For protected endpoints, include the JWT token in the Authorization header:
 ```
 Authorization: Bearer <your_jwt_token>
+```
+
+# Test Architecture
+
+Tests are located in the `tests/` directory and use `pytest` with `requests` for HTTP-based API testing.
+
+```
+tests/
+  api_clients/          # Client classes for API interaction
+    auth_client.py      # AuthClient: register, login
+    events_client.py    # EventsClient: create_event
+    rsvps_client.py     # RSVPSClient: rsvp_to_event
+  conftest.py           # Fixtures and shared test data
+  test_api.py           # API integration tests
+  test_models.py        # Unit tests for data models
+```
+
+The test suite follows a **client pattern** (similar to Page Object Model for UI tests): each API endpoint group has a dedicated client class that encapsulates HTTP calls. Tests use these clients instead of making raw `requests` calls, improving readability and maintainability.
+
+### Running Tests
+
+1. Install test dependencies:
+```bash
+pip install -r requirements-test.txt
+```
+
+2. Make sure the API is running (locally or in Docker), then:
+```bash
+pytest -v
 ```
 
 ## Security Notes
