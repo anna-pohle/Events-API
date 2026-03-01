@@ -1,6 +1,7 @@
 import requests
 from .conftest import BASE_URL, generate_user_data
 from .api_clients.auth_client import AuthClient
+from .api_clients.events_client import EventsClient
 
 
 
@@ -73,8 +74,7 @@ def test_create_public_event_requires_auth_and_suceeds_with_token(register_user_
     headers = {"Authorization": f"Bearer {register_user_and_get_auth_token}"}
 
     # Act
-    response = requests.post(f"{BASE_URL}/api/events",                             json=event_data,
-                             headers=headers)
+    response = EventsClient(BASE_URL).create_event(event_data, headers)
 
     # Assert
     assert response.status_code == 201
@@ -98,10 +98,8 @@ def test_rsvp_to_public_event_requires_no_auth(register_user_and_get_auth_token)
     }
     headers = {"Authorization": f"Bearer {auth_token}"}
 
-    # Arrange: create public event
-    event_creation_response = requests.post(f"{BASE_URL}/api/events", json=event_data,
-                             headers=headers)
-
+    # Arrange: create public event & get ID
+    event_creation_response = EventsClient(BASE_URL).create_event(event_data, headers)
     event_id = event_creation_response.json()["id"]
 
     # Act: RSVP to event without auth
@@ -147,10 +145,8 @@ def test_rsvp_to_private_event_fails_without_auth_passes_with_auth(register_user
     }
     headers = {"Authorization": f"Bearer {auth_token}"}
 
-    # Arrange: create public event
-    event_creation_response = requests.post(f"{BASE_URL}/api/events", json=event_data,
-                                            headers=headers)
-
+    # Arrange: create public event & get ID
+    event_creation_response = EventsClient(BASE_URL).create_event(event_data, headers)
     event_id = event_creation_response.json()["id"]
 
     # Act: RSVP to event without auth
@@ -184,10 +180,8 @@ def test_rsvp_to_admin_event_fails_with_non_admin_auth(register_user_and_get_aut
     }
     headers = {"Authorization": f"Bearer {auth_token}"}
 
-    # Arrange: create admin event
-    event_creation_response = requests.post(f"{BASE_URL}/api/events", json=event_data,
-                                            headers=headers)
-
+    # Arrange: create admin event & get ID
+    event_creation_response = EventsClient(BASE_URL).create_event(event_data, headers)
     event_id = event_creation_response.json()["id"]
 
     # Act: RSVP to event with non-admin auth
@@ -216,10 +210,8 @@ def test_rsvp_to_booked_out_public_event_fails(register_user_and_get_auth_token)
     }
     headers = {"Authorization": f"Bearer {auth_token}"}
 
-    # Arrange: create public event
-    event_creation_response = requests.post(f"{BASE_URL}/api/events", json=event_data,
-                                            headers=headers)
-
+    # Arrange: create public event & get ID
+    event_creation_response = EventsClient(BASE_URL).create_event(event_data, headers)
     event_id = event_creation_response.json()["id"]
 
     # Act: RSVP twice to event without auth
