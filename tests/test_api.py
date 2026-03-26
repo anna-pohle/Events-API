@@ -1,8 +1,10 @@
+import requests
+
+from routes.rsvps import rsvps_bp
 from .api_clients.rsvps_client import RSVPSClient
 from .conftest import BASE_URL, generate_user_data
 from .api_clients.auth_client import AuthClient
 from .api_clients.events_client import EventsClient
-from .api_clients.health_client import HealthClient
 
 
 
@@ -12,9 +14,10 @@ def test_health_check():
     """check that health endpoint returns 'healthy'
     Make sure app is running to test this"""
 
+    #Arrange
 
     # Act
-    response = HealthClient(BASE_URL).check_api_status()
+    response = requests.get(f"{BASE_URL}/api/health")
     data = response.json()
 
     # Assert
@@ -49,7 +52,7 @@ def test_login_user_returns_auth_token():
     AuthClient(BASE_URL).register(user_data)
 
     # Act: login
-    response = AuthClient(BASE_URL).login()
+    response = AuthClient(BASE_URL).login(user_data)
 
     # Assert
     assert response.status_code == 200
