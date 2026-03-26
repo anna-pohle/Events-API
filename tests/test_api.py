@@ -49,7 +49,7 @@ def test_login_user_returns_auth_token():
     AuthClient(BASE_URL).register(user_data)
 
     # Act: login
-    response = AuthClient(BASE_URL).login(user_data)
+    response = AuthClient(BASE_URL).login()
 
     # Assert
     assert response.status_code == 200

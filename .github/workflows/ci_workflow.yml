@@ -9,75 +9,54 @@ on:                       #define trigger
 
 jobs:
   test:
-    name: test
+    name: test & deploy
     runs-on: ubuntu-latest
     environment: production
     steps:
       # DOCKER-SETUP
-      - uses: "actions/checkout@v4" # github repo in virtual machine herunterladen
+      - uses: "actions/checkout@v6" # github repo in virtual machine herunterladen
       - run: "docker build -t events-api ." # in dieser vm aus dem repo ein docker image m.d. namen "events-api" bauen
       - run: "docker run --name events_api_container -d -p 5000:5000 events-api "  # docker container aus diesem image starten
       - run: "sleep 5"        #warten
-      - run: "curl localhost:5000/api/health" # curl request an API in container
+
       # PYTHON-SETUP
-      - uses: "actions/setup-python@v4"
+      - uses: "actions/setup-python@v6"
         with: {python-version: "3.11"}
       - run: "pip install -r requirements.txt"
       - run: "pip install -r requirements-test.txt"
+
       # RUN TESTS
       - run: "pytest -v"
-      # CLEANUP
-      - if: failure()
-        run: "docker stop events_api_container"
-      - if: failure()
-        run: "docker rm events_api_container"
-      - if: failure()
-        run: "docker rmi events-api"
-      - if: success()
-        run: docker save events-api -o events-api.tar
-      - if: success()
-        uses: actions/upload-artifact@v4
+
+      # DEPLOY (läuft automatisch nur dann, wenn die tests bestanden sind)
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
         with:
-          name: docker-image
-          path: events-api.tar
+          username: ${{ secrets.DOCKERHUB_USERNAME }} #bei github hinterlegt
+          password: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
 
-  #DEPLOY
-  deploy:
-    name: deploy
-    runs-on: ubuntu-latest
-    environment: production
-    needs: test
-    steps:
+      - name: Tag Docker Image
+        run: |
+          docker tag events-api:latest ${{ secrets.DOCKERHUB_USERNAME }}/events-api:latest
 
-    - name: Download artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: docker-image
+      - name: Push Image to Docker Hub
+        run: |
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/events-api:latest
 
-    - name: Load Docker Image
-      run: docker load -i events-api.tar
+      - name: Trigger Render redeploy
+        run: |
+          curl -X  POST ${{secrets.RENDER_DEPLOY_HOOK}}
 
-    - name: Login to DockerHub
-      uses: docker/login-action@v3
-      with:
-        username: ${{ secrets.DOCKERHUB_USERNAME }} #bei github hinterlegt
-        password: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
+      - name: Sleep
+        run: sleep 10s
 
-    - name: Tag Docker Image
-      run: |
-        docker tag events-api:latest ${{ secrets.DOCKERHUB_USERNAME }}/events-api:latest
+      - name: Smoke Test Health Check
+        run: curl --fail ${{secrets.RENDER_BASE_URL}}/api/health
 
-    - name: Push Image to Docker Hub
-      run: |
-        docker push ${{ secrets.DOCKERHUB_USERNAME }}/events-api:latest
+      # CLEANUP
 
-    - name: Trigger Render redeploy
-      run: |
-        curl -X  POST ${{secrets.RENDER_DEPLOY_HOOK}}
-
-    - name: Sleep
-      run: sleep 10s
-
-    - name: Smoke Test Health Check
-      run: curl --fail ${{secrets.RENDER_BASE_URL}}/api/health
-
+      - if: always()
+        run: |
+          docker stop events_api_container
+          docker rm events_api_container
+          docker rmi events-api
