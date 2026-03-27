@@ -2,6 +2,23 @@
 
 A Flask-based REST API for managing events and RSVPs with different access levels. This API is designed to teach web security best practices through incremental improvements.
 
+## Project Context
+
+This repo was created as an assignment during my training as a QA Engineer. The **Flask API itself was provided as starter code** -- my task was to build a complete testing and CI/CD pipeline around it.
+
+### Provided (Starter Code)
+- Flask application with authentication, event, and RSVP endpoints (`app.py`, `models.py`, `config.py`, `routes/`)
+- OpenAPI specification (`openapi.yaml`)
+- Dependencies (`requirements.txt`)
+
+### My Contribution
+- **Test suite** -- API integration tests and unit tests with pytest (`tests/`)
+  - Client pattern (similar to Page Object Model) for better maintainability (`tests/api_clients/`)
+  - Fixtures and test data generation (`tests/conftest.py`)
+- **CI/CD pipeline** -- GitHub Actions workflow that automatically builds and tests on every push (`.github/workflows/ci_workflow.yml`)
+- **Dockerization** -- Dockerfile and .dockerignore for containerized execution
+- **README extension** -- Documentation of Docker setup, CI/CD, test architecture, and Swagger UI
+
 ## Features
 
 - **Public Events**: Anyone can RSVP without authentication
